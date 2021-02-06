@@ -61,10 +61,11 @@ class ChannelViewSet(viewsets.ModelViewSet):
         snippets = [sub["snippet"] for sub in response["items"]]
         channels = [
             {
+                "id": snippet["resourceId"]["channelId"],
                 "title": snippet["title"],
                 "icon_url": snippet["thumbnails"]["default"]["url"]
             } 
             for snippet in snippets]
 
-        #return Response(channels)        
-        return Response(response)        
+        return Response(channels)        
+        #return Response(response)        
