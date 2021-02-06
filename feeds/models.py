@@ -10,6 +10,7 @@ class Feed(models.Model):
 
 
 class Channel(models.Model):
+    id = models.CharField(max_length=255, primary_key=True, default='id')
     name = models.CharField(max_length=40)
     feed = models.ForeignKey("Feed", null=True, blank=True, on_delete=models.SET_NULL)
 
