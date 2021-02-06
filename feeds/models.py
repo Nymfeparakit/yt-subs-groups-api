@@ -7,3 +7,11 @@ class Feed(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Channel(models.Model):
+    name = models.CharField(max_length=40)
+    feed = models.ForeignKey("Feed", null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return self.name
