@@ -72,9 +72,17 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
         return Response(channels)        
         #return Response(response)        
 
-    def update(self, request, pk=None):
-        if not Channel.objects.filter(id=pk).exists():
-            Channel.objects.create(
-                id=pk, 
-                name=request.data["name"], 
-                feed=Feed.objects.get(pk=request.data["feed_id"]))
+    def create(self, request):
+        # if channel with id exists, just update it's feed_id field
+        # if Channel.objects.filter(id=request.data["id"]).exists():
+            # Channel.objects.get(id=request.data["id"]).feed_id = request.data["feed_id"]
+        channel = Channel.objects.create(
+            id=request.data["id"],
+            name=request.data["name"],
+            feed_id=request.data["feed_id"],
+        )
+        return Response({
+            'id': request.data["id"],
+            'name': request.data["name"],
+            'feed_id': request.data["feed_id"],
+        })
