@@ -6,11 +6,10 @@ from .models import Feed, Channel
 class ChannelSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Channel
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'feed_id')
 
 
 class FeedSerializer(serializers.HyperlinkedModelSerializer):
-    # channel_set = ChannelSerializer(many=True)
     channels = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
