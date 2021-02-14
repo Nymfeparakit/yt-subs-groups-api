@@ -5,6 +5,7 @@ import google_auth_oauthlib.flow
 import googleapiclient
 import os
 import pickle 
+from rest_framework_tracking.mixins import LoggingMixin
 
 from .serializers import FeedSerializer, ChannelSerializer
 from .models import Feed, Channel
@@ -41,7 +42,8 @@ class FeedViewSet(viewsets.ModelViewSet):
     queryset = Feed.objects.all()    
 
 
-class ChannelViewSet(viewsets.ModelViewSet):
+class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
+    logging_methods = ['POST', 'PUT']
     serializer_class = ChannelSerializer
     queryset = Channel.objects.all() 
 
@@ -69,3 +71,10 @@ class ChannelViewSet(viewsets.ModelViewSet):
 
         return Response(channels)        
         #return Response(response)        
+
+    def update(self, request, pk=None):
+        if not Channel.objects.filter(id=pk).exists():
+            Channel.objects.create(
+                id=pk, 
+                name=request.data["name"], 
+                feed=Feed.objects.get(pk=request.data["feed_id"]))
