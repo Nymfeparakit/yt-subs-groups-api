@@ -10,8 +10,10 @@ class ChannelSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FeedSerializer(serializers.HyperlinkedModelSerializer):
-    channel_set = ChannelSerializer(many=True)
+    # channel_set = ChannelSerializer(many=True)
+    channels = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Feed
-        fields = ('id', 'name', 'channel_set')
+        # fields = ('id', 'name', 'channel_set')
+        fields = ('id', 'name', 'channels')
