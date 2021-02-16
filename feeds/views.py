@@ -52,24 +52,38 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
         # *DO NOT* leave this option enabled in production.
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         youtube = get_authenticated_service()
-        
+
+        # get all channels from yt account         
         request = youtube.subscriptions().list(
             part="snippet,contentDetails",
             mine=True,
             maxResults=50,
         )
         response = request.execute()
-        #subscriptions = response["items"]
-        snippets = [sub["snippet"] for sub in response["items"]]
-        channels = [
-            {
-                "id": snippet["resourceId"]["channelId"],
-                "title": snippet["title"],
-                "icon_url": snippet["thumbnails"]["default"]["url"]
-            } 
-            for snippet in snippets]
 
-        return Response(channels)        
+        # get ids of all saved channels
+        saved_channels = Channel.objects.all()
+
+        snippets = [sub["snippet"] for sub in response["items"]]
+        
+        channels_to_return = {}
+        for feed in Feed.objects.all():
+            channels_to_return[feed.name] = []
+        channels_to_return['_other'] = [] # for channel not inside any group
+        for snippet in snippets:
+            curr_channel = {
+                        "id": snippet["resourceId"]["channelId"],
+                        "title": snippet["title"],
+                        "icon_url": snippet["thumbnails"]["default"]["url"]
+                    } 
+            # is channel saved
+            if curr_channel["id"] in [channel.id for channel in saved_channels]:
+                channel_feed = Channel.objects.get(id=curr_channel["id"]).feed.name
+                channels_to_return[channel_feed].append(curr_channel)
+            else:
+                channels_to_return["_other"].append(curr_channel)
+
+        return Response(channels_to_return)        
         #return Response(response)        
 
     def create(self, request):
