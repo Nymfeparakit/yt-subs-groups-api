@@ -4,7 +4,7 @@ from googleapiclient.discovery import build
 import google_auth_oauthlib.flow
 import googleapiclient
 import os
-import pickle 
+import pickle
 from rest_framework_tracking.mixins import LoggingMixin
 
 from .serializers import FeedSerializer, ChannelSerializer
@@ -17,6 +17,7 @@ YOUTUBE_API_VERSION = 'v3'
 client_secrets_file = "../client_secret_desktop.json"
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+
 
 def get_authenticated_service():
     if os.path.exists("../credentials_pickle_file"):
@@ -39,13 +40,36 @@ def get_authenticated_service():
 
 class FeedViewSet(viewsets.ModelViewSet):
     serializer_class = FeedSerializer
-    queryset = Feed.objects.all()    
+    queryset = Feed.objects.all()
+
+    def retrieve(self, request, pk=None):
+
+        os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        youtube = get_authenticated_service()
+
+        feed = Feed.objects.get(id=pk)
+        # get channel ids in this feed
+        channel_ids = [
+            channel.id for channel in Channel.objects.filter(feed=feed)]
+        # get channels by id from yt
+        request = youtube.channels().list(
+            part="contentDetails",
+            id=channel_ids
+        )
+        response = request.execute()
+        channels = response["items"]
+        
+        # get playlists of latest uploaded videos
+        upload_playlist_ids = [
+            channel["contentDetails"]["relatedPlaylists"]["uploads"] for channel in channels]
+
+        return Response(upload_playlist_ids)
 
 
 class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
     logging_methods = ['POST', 'PUT']
     serializer_class = ChannelSerializer
-    queryset = Channel.objects.all() 
+    queryset = Channel.objects.all()
 
     def list(self, request):
         # Disable OAuthlib's HTTPS verification when running locally.
@@ -53,7 +77,7 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         youtube = get_authenticated_service()
 
-        # get all channels from yt account         
+        # get all channels from yt account
         request = youtube.subscriptions().list(
             part="snippet,contentDetails",
             mine=True,
@@ -65,31 +89,32 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
         saved_channels = Channel.objects.all()
 
         snippets = [sub["snippet"] for sub in response["items"]]
-        
+
         channels_to_return = {}
         for feed in Feed.objects.all():
             channels_to_return[feed.name] = []
-        channels_to_return['_other'] = [] # for channel not inside any group
+        channels_to_return['_other'] = []  # for channel not inside any group
         for snippet in snippets:
             curr_channel = {
-                        "id": snippet["resourceId"]["channelId"],
-                        "title": snippet["title"],
-                        "icon_url": snippet["thumbnails"]["default"]["url"]
-                    } 
+                "id": snippet["resourceId"]["channelId"],
+                "title": snippet["title"],
+                "icon_url": snippet["thumbnails"]["default"]["url"]
+            }
             # is channel saved
             if curr_channel["id"] in [channel.id for channel in saved_channels]:
-                channel_feed = Channel.objects.get(id=curr_channel["id"]).feed.name
+                channel_feed = Channel.objects.get(
+                    id=curr_channel["id"]).feed.name
                 channels_to_return[channel_feed].append(curr_channel)
             else:
                 channels_to_return["_other"].append(curr_channel)
 
-        return Response(channels_to_return)        
-        #return Response(response)        
+        return Response(channels_to_return)
+        # return Response(response)
 
     def create(self, request):
         # if channel with id exists, just update it's feed_id field
         # if Channel.objects.filter(id=request.data["id"]).exists():
-            # Channel.objects.get(id=request.data["id"]).feed_id = request.data["feed_id"]
+        # Channel.objects.get(id=request.data["id"]).feed_id = request.data["feed_id"]
         channel = Channel.objects.create(
             id=request.data["id"],
             name=request.data["name"],
