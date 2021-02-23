@@ -63,7 +63,21 @@ class FeedViewSet(viewsets.ModelViewSet):
         upload_playlist_ids = [
             channel["contentDetails"]["relatedPlaylists"]["uploads"] for channel in channels]
 
-        return Response(upload_playlist_ids)
+        # get videos from playlist
+        videos_request = youtube.playlistItems().list(
+            part="snippet,contentDetails",
+            playlistId=upload_playlist_ids[0]
+        )
+        videos_response = videos_request.execute()
+        videos_items = videos_response["items"]
+        videos_list = [{
+            "id": item["contentDetails"]["videoId"],
+            "title": item["snippet"]["title"],
+            "video_img_url": item["snippet"]["thumbnails"]["default"]["url"],
+            "channel_title": item["snippet"]["videoOwnerChannelTitle"],
+            } for item in videos_items]
+
+        return Response(videos_list)
 
 
 class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
