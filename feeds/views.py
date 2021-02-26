@@ -51,6 +51,10 @@ class FeedViewSet(viewsets.ModelViewSet):
         # get channel ids in this feed
         channel_ids = [
             channel.id for channel in Channel.objects.filter(feed=feed)]
+
+        if not channel_ids:
+            return Response([])
+
         # get channels by id from yt
         request = youtube.channels().list(
             part="contentDetails",
