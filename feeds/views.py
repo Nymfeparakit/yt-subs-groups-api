@@ -6,6 +6,7 @@ import googleapiclient
 import os
 import pickle
 from rest_framework_tracking.mixins import LoggingMixin
+from operator import itemgetter
 
 from .serializers import FeedSerializer, ChannelSerializer
 from .models import Feed, Channel
@@ -67,19 +68,24 @@ class FeedViewSet(viewsets.ModelViewSet):
         upload_playlist_ids = [
             channel["contentDetails"]["relatedPlaylists"]["uploads"] for channel in channels]
 
-        # get videos from playlist
-        videos_request = youtube.playlistItems().list(
-            part="snippet,contentDetails",
-            playlistId=upload_playlist_ids[0]
-        )
-        videos_response = videos_request.execute()
-        videos_items = videos_response["items"]
-        videos_list = [{
-            "id": item["contentDetails"]["videoId"],
-            "title": item["snippet"]["title"],
-            "video_img_url": item["snippet"]["thumbnails"]["default"]["url"],
-            "channel_title": item["snippet"]["videoOwnerChannelTitle"],
-            } for item in videos_items]
+        # get videos from each playlist
+        videos_list = []
+        for plId in upload_playlist_ids:
+            videos_request = youtube.playlistItems().list(
+                part="snippet,contentDetails",
+                playlistId=plId
+            )
+            videos_response = videos_request.execute()
+            videos_items = videos_response["items"]
+            videos_list += [{
+                "id": item["contentDetails"]["videoId"],
+                "title": item["snippet"]["title"],
+                "video_img_url": item["snippet"]["thumbnails"]["default"]["url"],
+                "channel_title": item["snippet"]["videoOwnerChannelTitle"],
+                "published_at": item["contentDetails"]["videoPublishedAt"]
+                } for item in videos_items]
+
+        videos_list = sorted(videos_list, key=itemgetter("published_at"))
 
         return Response(videos_list)
 
