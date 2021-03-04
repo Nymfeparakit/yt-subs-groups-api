@@ -96,6 +96,9 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Channel.objects.all()
 
     def list(self, request):
+        # get next page param
+        next_page_token = request.query_params.get("nextPageToken")
+
         # Disable OAuthlib's HTTPS verification when running locally.
         # *DO NOT* leave this option enabled in production.
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -106,6 +109,7 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
             part="snippet,contentDetails",
             mine=True,
             maxResults=50,
+            pageToken=next_page_token
         )
         response = request.execute()
 
@@ -131,6 +135,9 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
                 channels_to_return[channel_feed].append(curr_channel)
             else:
                 channels_to_return["_other"].append(curr_channel)
+
+        if "nextPageToken" in response:
+            channels_to_return["nextPageToken"] = response["nextPageToken"] 
 
         return Response(channels_to_return)
         # return Response(response)
