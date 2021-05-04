@@ -80,7 +80,7 @@ class FeedViewSet(viewsets.ModelViewSet):
             videos_list += [{
                 "id": item["contentDetails"]["videoId"],
                 "title": item["snippet"]["title"],
-                "video_img_url": item["snippet"]["thumbnails"]["default"]["url"],
+                "video_img_url": item["snippet"]["thumbnails"]["medium"]["url"],
                 "channel_title": item["snippet"]["videoOwnerChannelTitle"],
                 "published_at": item["contentDetails"]["videoPublishedAt"]
                 } for item in videos_items]
