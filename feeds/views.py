@@ -109,7 +109,8 @@ class ChannelViewSet(LoggingMixin, viewsets.ModelViewSet):
             part="snippet,contentDetails",
             mine=True,
             maxResults=50,
-            pageToken=next_page_token
+            pageToken=next_page_token,
+            order='alphabetical'
         )
         response = request.execute()
 
