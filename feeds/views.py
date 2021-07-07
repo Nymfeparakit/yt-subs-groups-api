@@ -12,6 +12,7 @@ from rest_framework_tracking.mixins import LoggingMixin
 from .models import Channel, Feed
 from .serializers import ChannelSerializer, FeedSerializer
 
+
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 client_secrets_file = "../client_secret_desktop.json"
