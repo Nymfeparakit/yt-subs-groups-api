@@ -145,3 +145,6 @@ dmypy.json
 
 # profiling data
 .prof
+
+# docker-compose for production
+docker-compose-prod.yml
